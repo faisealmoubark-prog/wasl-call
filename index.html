@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <meta name="theme-color" content="#101410" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="وَصْل" />
+  <link rel="manifest" href="manifest.json" />
+  <title>وَصْل</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { --bg: #101410; --surface: #182018; --raised: #222c24; --fg: #f4f1e8; --muted: #a3aea4; --line: #314036; --brass: #e2b15a; --ink: #1a1408; --hang: #e15a48; --ok: #4ade80; --radius: 1.25rem; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--bg); color: var(--fg); font-family: "IBM Plex Sans Arabic", system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
+    .app { max-width: 430px; margin: 0 auto; height: 100dvh; display: flex; flex-direction: column; position: relative; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 1.1rem 1.25rem 0.5rem; }
+    header .label { font-size: 0.7rem; letter-spacing: 0.12em; color: var(--brass); font-weight: 500; }
+    header h1 { font-size: 1.75rem; font-weight: 600; line-height: 1.1; }
+    .status { font-size: 0.85rem; color: var(--brass); }
+    main { flex: 1; overflow-y: auto; padding: 0.75rem 1.25rem 6rem; -webkit-overflow-scrolling: touch; }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem; }
+    .muted { color: var(--muted); font-size: 0.875rem; }
+    .brass { color: var(--brass); }
+    .user-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+    .user-id { font-size: 1.5rem; font-weight: 600; direction: ltr; text-align: right; }
+    .copy-btn { width: 44px; height: 44px; border-radius: 50%; border: none; background: var(--raised); color: var(--fg); display: grid; place-items: center; cursor: pointer; }
+    .form-group { margin-bottom: 1rem; }
+    label { display: block; font-size: 0.875rem; color: var(--muted); margin-bottom: 0.4rem; }
+    input[type="text"] { width: 100%; height: 48px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); color: var(--fg); padding: 0 1rem; font-size: 1.1rem; direction: ltr; outline: none; }
+    input:focus { border-color: var(--brass); }
+    .call-btn { width: 80px; height: 80px; border-radius: 50%; border: none; background: var(--brass); color: var(--ink); display: grid; place-items: center; margin: 1.25rem auto; cursor: pointer; }
+    .call-btn:disabled { opacity: 0.45; }
+    .section-title { font-size: 0.875rem; font-weight: 500; color: var(--muted); margin: 1.25rem 0 0.6rem; }
+    nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 430px; margin: 0 auto; background: var(--surface); border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr 1fr 1fr; padding-bottom: env(safe-area-inset-bottom); z-index: 50; }
+    nav button { height: 64px; border: none; background: transparent; color: var(--muted); font-size: 0.7rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem; cursor: pointer; }
+    nav button.active { color: var(--brass); }
+    .hidden { display: none !important; }
+    .btn-primary { width: 100%; height: 48px; border-radius: 999px; border: none; background: var(--brass); color: var(--ink); font-weight: 600; cursor: pointer; margin-top: 0.75rem; }
+    .btn-secondary { width: 100%; height: 44px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--fg); cursor: pointer; margin-top: 0.5rem; }
+    .incoming-overlay, .in-call-overlay { position: fixed; inset: 0; background: #0a0e0a; z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: space-between; padding: 3rem 1.5rem 2.5rem; max-width: 430px; margin: 0 auto; }
+    .incoming-overlay.show, .in-call-overlay.show { display: flex; }
+    .caller-avatar { width: 110px; height: 110px; border-radius: 50%; background: var(--raised); display: grid; place-items: center; font-size: 2.5rem; margin: 0 auto 1.25rem; border: 3px solid var(--brass); }
+    .caller-name { font-size: 1.75rem; font-weight: 600; text-align: center; }
+    .call-actions { display: flex; gap: 2.5rem; margin-bottom: 2rem; }
+    .action-btn { width: 72px; height: 72px; border-radius: 50%; border: none; display: grid; place-items: center; cursor: pointer; color: white; }
+    .btn-reject { background: var(--hang); }
+    .btn-accept { background: var(--ok); color: #052e16; }
+    .btn-hang { background: var(--hang); width: 68px; height: 68px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div><p class="label">اتصال رقمي</p><h1>وَصْل</h1></div>
+      <p class="status" id="lineStatus">الخط شغّال</p>
+    </header>
+    <main>
+      <div id="tab-call">
+        <div class="card">
+          <div class="user-row">
+            <div>
+              <p class="muted">يوزرك، ينشأ أول ما تدخل ويبقى</p>
+              <p class="user-id" id="myId">—</p>
+              <p class="brass" id="myNameTag"></p>
+            </div>
+            <button class="copy-btn" id="copyBtn">📋</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="peerInput">يوزر الشخص</label>
+          <input type="text" id="peerInput" placeholder="مثال: najd4821" />
+        </div>
+        <button class="call-btn" id="callBtn" disabled>📞</button>
+        <p class="muted" style="text-align:center;font-size:0.85rem">المكالمة صوت بين جهازين</p>
+        <p class="section-title">آخر المكالمات</p>
+        <div id="historyList"><p class="muted">لما تتصل أو يجيك اتصال، السجل ينحفظ هنا.</p></div>
+      </div>
+      <div id="tab-solutions" class="hidden">
+        <h2>حلول بنقرة</h2>
+        <div id="solutionsList"></div>
+      </div>
+      <div id="tab-account" class="hidden">
+        <div class="card">
+          <p class="muted">اسمك الظاهر</p>
+          <p style="font-size:1.4rem;font-weight:600" id="accountName">—</p>
+          <p class="user-id" id="accountId">—</p>
+          <button class="btn-secondary" id="copyAccountBtn">نسخ اليوزر</button>
+        </div>
+        <div class="card">
+          <p style="font-weight:500">إشعار المكالمة</p>
+          <p class="muted" id="notifStatus">جاري الفحص...</p>
+          <button class="btn-primary" id="enableNotifBtn">تفعيل الإشعارات</button>
+        </div>
+        <div class="card">
+          <p style="font-weight:500">البقاء نشط</p>
+          <p class="muted" id="keepAliveStatus">اضغط التفعيل عشان الأداة تبقى شغّالة</p>
+          <button class="btn-primary" id="keepAliveBtn">تفعيل البقاء نشط</button>
+        </div>
+        <button class="btn-secondary" id="resetUserBtn" style="color:var(--hang)">يوزر جديد</button>
+      </div>
+    </main>
+    <nav>
+      <button type="button" data-tab="call" class="active">اتصال</button>
+      <button type="button" data-tab="solutions">حلول</button>
+      <button type="button" data-tab="account">حسابي</button>
+    </nav>
+  </div>
+  <div class="incoming-overlay" id="incomingOverlay">
+    <div style="text-align:center;margin-top:3rem">
+      <div class="caller-avatar" id="incomingAvatar">?</div>
+      <div class="caller-name" id="incomingName">—</div>
+      <p id="incomingId">—</p>
+      <p style="color:var(--brass)">اتصال وارد...</p>
+    </div>
+    <div class="call-actions">
+      <button class="action-btn btn-reject" id="rejectBtn">✕</button>
+      <button class="action-btn btn-accept" id="acceptBtn">📞</button>
+    </div>
+  </div>
+  <div class="in-call-overlay" id="inCallOverlay">
+    <div style="text-align:center;margin-top:3rem">
+      <div class="caller-avatar" id="inCallAvatar">?</div>
+      <div class="caller-name" id="inCallName">—</div>
+      <p id="callTimer">00:00</p>
+    </div>
+    <div style="text-align:center">
+      <button class="action-btn btn-hang" id="hangupBtn">📵</button>
+    </div>
+  </div>
+  <audio id="ringtone" loop></audio>
+  <audio id="remoteAudio" autoplay playsinline></audio>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -35,7 +35,7 @@
         if(!('wakeLock' in navigator)) { $('#keepAliveStatus').textContent='غير مدعوم في هذا المتصفح'; return; }
         wake=await navigator.wakeLock.request('screen');
         active=true;
-        wake.addEventListener('release',()=>{ active=false; wake=null; $('#keepAliveBtn').textContent='تفعيل البقاء نشط'; $('#keepAliveStatus').textContent='انتهى قفل الشاشة'; });
+        wake.addEventListener('release',()=>{ wake=null; if(document.visibilityState==='visible'){ active=false; $('#keepAliveBtn').textContent='تفعيل البقاء نشط'; $('#keepAliveStatus').textContent='انتهى قفل الشاشة'; } });
         $('#keepAliveBtn').textContent='إيقاف البقاء نشط';
         $('#keepAliveStatus').textContent='نشط ✓';
       } catch { $('#keepAliveStatus').textContent='تعذر تفعيل البقاء نشط'; }
@@ -118,7 +118,7 @@
   if(typeof Peer !== 'undefined'){
     peer = new Peer(me.id, {debug:0});
     peer.on('open', () => setStatus('الخط شغّال'));
-    peer.on('disconnected', () => setStatus('انقطع الاتصال بالخادم؛ جارٍ إعادة المحاولة'));
+    peer.on('disconnected', () => { setStatus('انقطع الاتصال بالخادم؛ جارٍ إعادة الاتصال'); if(!peer.destroyed) peer.reconnect(); });
     peer.on('close', () => setStatus('اتصال الخادم مغلق'));
     peer.on('error', err => { console.error('PeerJS error',err); setStatus('خطأ اتصال: '+(err.type||'غير معروف')); if(currentCall || pendingCall) finishCall(true); });
     peer.on('call', call => {
